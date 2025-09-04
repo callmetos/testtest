@@ -1,0 +1,33 @@
+# ไฟล์นี้จะถูกใช้โดย GitHub Actions เพื่อทำการทดสอบโค้ดโดยอัตโนมัติ
+# path: .github/workflows/ci.yml
+
+name: NavMate Backend CI
+
+# กำหนดให้ workflow นี้ทำงานเมื่อมีการ push หรือ pull request ไปยัง branch 'main' หรือ 'master'
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+
+jobs:
+  # Workflow นี้มี job เดียวชื่อว่า "test"
+  test:
+    # กำหนดให้ job นี้รันบน runner ของ GitHub ที่เป็น Ubuntu เวอร์ชันล่าสุด
+    runs-on: ubuntu-latest
+
+    # Steps คือลำดับของ task ที่จะถูกรันใน job นี้
+    steps:
+      # 1. Checkout โค้ดจาก repository ของคุณ
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2. ตั้งค่าสภาพแวดล้อมของ Go
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22' # ระบุเวอร์ชัน Go ให้ตรงกับโปรเจกต์
+
+      # 3. รันคำสั่ง go test เพื่อทดสอบโค้ดทั้งหมด
+      - name: Run Go tests
+        run: go test -v ./...
