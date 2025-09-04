@@ -23,9 +23,10 @@ type Config struct {
 	}
 
 	Google struct {
-		ClientID     string
-		ClientSecret string
-		RedirectURL  string
+		ClientID         string
+		ClientSecret     string
+		RedirectURL      string
+		GoogleMapsAPIKey string // NEW: Added Maps API Key
 	}
 }
 
@@ -59,6 +60,8 @@ func Load() *Config {
 	cfg.Google.ClientID = getEnv("GOOGLE_CLIENT_ID", "")
 	cfg.Google.ClientSecret = getEnv("GOOGLE_CLIENT_SECRET", "")
 	cfg.Google.RedirectURL = getEnv("GOOGLE_REDIRECT_URL", "http://localhost:8080/auth/google/callback")
+	// NEW: Load the Maps API key from .env file
+	cfg.Google.GoogleMapsAPIKey = getEnv("GOOGLE_MAPS_API_KEY", "")
 
 	return cfg
 }

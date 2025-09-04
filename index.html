@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NavMate - Your Travel Companion</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .fade-in { animation: fadeIn 0.5s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .pulse { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
+        .pac-container { z-index: 1050 !important; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; }
+        .pac-item { padding: 10px; font-size: 14px; cursor: pointer; }
+        .pac-item:hover { background-color: #f7fafc; }
+        .pac-item-query { font-weight: 600; }
+    </style>
+    <!-- IMPORTANT: Add libraries=geometry for route drawing -->
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAmvAHFUFH5c5xakUuYdtXqCBP9JH__rsI&libraries=places,geometry&callback=initMap" async defer></script>
+</head>
+<body class="bg-slate-50 text-slate-800">
+
+    <div id="app" class="max-w-md mx-auto min-h-screen bg-white shadow-2xl shadow-slate-300/30">
+        <!-- Login, Plan, Options, Booking pages remain the same -->
+        <div id="page-login" class="p-6 pt-12 flex flex-col h-screen fade-in">
+            <div class="text-center mb-12"><h1 class="text-4xl font-bold text-indigo-600">NavMate</h1><p class="text-slate-500 mt-2">Your Smart Travel Companion</p></div>
+            <div class="bg-slate-100 p-1 rounded-lg flex mb-6"><button id="show-login-btn" class="w-1/2 py-2 rounded-md text-sm font-semibold bg-white shadow text-indigo-600">Login</button><button id="show-signup-btn" class="w-1/2 py-2 rounded-md text-sm font-semibold text-slate-500">Sign Up</button></div>
+            <form id="login-form" class="space-y-4">
+                <div><label for="login-email" class="text-sm font-medium text-slate-600">Email</label><input type="email" id="login-email" value="test@example.com" class="w-full px-4 py-2 mt-1 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" required></div>
+                <div><label for="login-password" class="text-sm font-medium text-slate-600">Password</label><input type="password" id="login-password" value="password123" class="w-full px-4 py-2 mt-1 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" required></div>
+                <button type="submit" class="w-full bg-indigo-600 text-white py-3 rounded-lg font-semibold hover:bg-indigo-700 transition-colors">Login</button>
+            </form>
+            <form id="signup-form" class="space-y-4 hidden">
+                 <div><label for="signup-email" class="text-sm font-medium text-slate-600">Email</label><input type="email" id="signup-email" placeholder="you@example.com" class="w-full px-4 py-2 mt-1 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" required></div>
+                <div><label for="signup-password" class="text-sm font-medium text-slate-600">Password</label><input type="password" id="signup-password" placeholder="Min. 8 characters" class="w-full px-4 py-2 mt-1 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" required></div>
+                <button type="submit" class="w-full bg-indigo-600 text-white py-3 rounded-lg font-semibold hover:bg-indigo-700 transition-colors">Create Account</button>
+            </form>
+            <div class="my-6 flex items-center"><div class="flex-grow border-t border-slate-200"></div><span class="mx-4 text-slate-400 text-sm">OR</span><div class="flex-grow border-t border-slate-200"></div></div>
+            <button id="google-login-btn" class="w-full bg-white border border-slate-300 text-slate-700 py-3 rounded-lg font-semibold hover:bg-slate-50 transition-colors flex items-center justify-center space-x-2">
+                <svg class="w-5 h-5" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"></path><path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"></path><path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"></path><path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571l6.19,5.238C42.022,36.218,44,30.556,44,24C44,22.659,43.862,21.35,43.611,20.083z"></path></svg>
+                <span>Sign in with Google</span>
+            </button>
+            <div class="mt-auto text-center text-slate-400 text-xs pb-4"><p>A demonstration for your backend project.</p></div>
+        </div>
+        <div id="page-plan" class="p-6 fade-in hidden">
+             <div class="flex justify-between items-center mb-8"><h2 class="text-2xl font-bold">Plan a Trip</h2><button id="logout-btn" class="text-sm text-slate-500 hover:text-indigo-600">Logout</button></div>
+            <form id="plan-form" class="space-y-4">
+                <div class="relative"><label for="origin" class="text-sm font-medium text-slate-600">From</label><input type="text" id="origin" placeholder="Enter starting point" class="w-full px-4 py-3 mt-1 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 pl-10" required><div class="absolute left-3 top-10 text-slate-400"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 21.35A9.35 9.35 0 0 0 21.35 12 9.35 9.35 0 0 0 12 2.65 9.35 9.35 0 0 0 2.65 12 9.35 9.35 0 0 0 12 21.35z"/></svg></div></div>
+                <div class="relative"><label for="destination" class="text-sm font-medium text-slate-600">To</label><input type="text" id="destination" placeholder="Enter destination" class="w-full px-4 py-3 mt-1 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 pl-10" required><div class="absolute left-3 top-10 text-slate-400"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg></div></div>
+                <div id="map" class="w-full h-48 bg-slate-200 rounded-lg my-6 border border-slate-300"></div>
+                <button type="submit" class="w-full bg-indigo-600 text-white py-3 rounded-lg font-semibold hover:bg-indigo-700 transition-colors !mt-8">Find Routes</button>
+            </form>
+        </div>
+        <div id="page-options" class="p-6 fade-in hidden">
+             <div class="flex items-center mb-8"><button id="back-to-plan-btn" class="mr-3 p-1 rounded-full hover:bg-slate-100"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></button><h2 class="text-2xl font-bold">Choose a Route</h2></div><div id="itinerary-list" class="space-y-3"></div>
+        </div>
+        <div id="page-booking" class="p-6 fade-in hidden">
+             <div class="flex items-center mb-6"><button id="back-to-options-btn" class="mr-3 p-1 rounded-full hover:bg-slate-100"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></button><h2 class="text-2xl font-bold">Confirm Booking</h2></div><div id="booking-summary" class="bg-slate-50 rounded-lg p-4 space-y-3"></div><button id="confirm-payment-btn" class="w-full bg-indigo-600 text-white py-3 rounded-lg font-semibold hover:bg-indigo-700 transition-colors mt-8">Confirm & Authorize Payment</button>
+        </div>
+        
+        <!-- NEW: Updated Active Trip Page -->
+        <div id="page-active-trip" class="p-6 fade-in hidden">
+            <h2 class="text-2xl font-bold text-center">Trip in Progress</h2>
+            <p class="text-slate-500 text-center text-sm mb-4" id="active-trip-summary"></p>
+            
+            <!-- NEW: Map container for live tracking -->
+            <div id="active-trip-map" class="w-full h-56 bg-slate-200 rounded-lg my-4 border border-slate-300"></div>
+            
+            <div id="eta-display" class="text-center bg-green-50 border border-green-200 rounded-lg p-3 mb-6"><p class="font-semibold text-green-700">Driver is arriving in 10 minutes.</p></div>
+            <div class="bg-indigo-50 border border-indigo-200 rounded-lg p-4 text-center">
+                <h3 class="font-bold text-indigo-800">Safety Check-in</h3>
+                <p class="text-sm text-indigo-600 mb-4">Your next check-in is due in:</p>
+                <div id="heartbeat-timer" class="text-4xl font-bold text-indigo-700 mb-4">15:00</div>
+                <button id="heartbeat-ack-btn" class="w-full bg-indigo-600 text-white py-3 rounded-lg font-semibold hover:bg-indigo-700 transition-colors mb-2">I'm Safe</button>
+                <button id="sos-btn" class="w-full bg-red-600 text-white py-2 rounded-lg font-semibold hover:bg-red-700 transition-colors text-sm">SOS</button>
+            </div>
+            <button id="complete-trip-btn" class="w-full bg-slate-600 text-white py-2 rounded-lg font-semibold hover:bg-slate-700 transition-colors text-sm mt-6">Simulate Trip Completion</button>
+        </div>
+
+        <div id="message-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 hidden">
+            <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-sm text-center fade-in"><div id="modal-icon" class="mx-auto mb-4"></div><h3 id="modal-title" class="text-lg font-bold mb-2"></h3><p id="modal-message" class="text-slate-600 text-sm mb-6"></p><button id="modal-close-btn" class="bg-indigo-600 text-white py-2 px-6 rounded-lg font-semibold hover:bg-indigo-700 transition-colors">OK</button></div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables for maps and locations
+        let originPlace = null; let destinationPlace = null;
+        // NEW: Global variables for the active trip map and markers
+        let activeTripMap = null;
+        let currentUserMarker = null;
+        let routePolyline = null;
+        let watchId = null; // To store the ID of the geolocation watch
+
+        function initMap() {
+            // This function now only initializes the map for the planning page
+            const bangkok = { lat: 13.7563, lng: 100.5018 };
+            const map = new google.maps.Map(document.getElementById("map"), { center: bangkok, zoom: 12, disableDefaultUI: true, mapTypeControl: false, streetViewControl: false, zoomControl: true });
+            const originInput = document.getElementById("origin");
+            const destinationInput = document.getElementById("destination");
+            const autocompleteOptions = { componentRestrictions: { country: "th" }, fields: ["geometry", "name", "place_id", "formatted_address"] };
+            const originAutocomplete = new google.maps.places.Autocomplete(originInput, autocompleteOptions);
+            const destinationAutocomplete = new google.maps.places.Autocomplete(destinationInput, autocompleteOptions);
+            let originMarker, destinationMarker;
+            const setupPlaceChangedListener = (autocomplete, markerType) => {
+                autocomplete.addListener("place_changed", () => {
+                    const place = autocomplete.getPlace();
+                    if (!place.geometry || !place.geometry.location) { if (markerType === 'origin') originPlace = null; else destinationPlace = null; return; }
+                    if (markerType === 'origin') originPlace = place; else destinationPlace = place;
+                    if (markerType === 'origin' && originMarker) originMarker.setMap(null);
+                    if (markerType === 'destination' && destinationMarker) destinationMarker.setMap(null);
+                    const newMarker = new google.maps.Marker({ map, position: place.geometry.location, title: place.name, animation: google.maps.Animation.DROP });
+                    if (markerType === 'origin') originMarker = newMarker; else destinationMarker = newMarker;
+                    if (originMarker && destinationMarker) { const bounds = new google.maps.LatLngBounds(); bounds.extend(originMarker.getPosition()); bounds.extend(destinationMarker.getPosition()); map.fitBounds(bounds); } else { map.setCenter(newMarker.getPosition()); map.setZoom(15); }
+                });
+            };
+            setupPlaceChangedListener(originAutocomplete, 'origin');
+            setupPlaceChangedListener(destinationAutocomplete, 'destination');
+        }
+
+        // NEW: Function to initialize the active trip map
+        function initActiveTripMap() {
+             activeTripMap = new google.maps.Map(document.getElementById('active-trip-map'), {
+                zoom: 15,
+                center: {lat: 13.75, lng: 100.5}, // Default center
+                disableDefaultUI: true,
+                zoomControl: true,
+             });
+
+             // Draw the route on the map
+             drawRoute();
+
+             // Start tracking the user's location
+             startLocationTracking();
+        }
+
+        // NEW: Function to draw the planned route
+        function drawRoute() {
+            if (!originPlace || !destinationPlace || !activeTripMap) return;
+
+            const directionsService = new google.maps.DirectionsService();
+            const directionsRenderer = new google.maps.DirectionsRenderer({
+                suppressMarkers: true, // We'll use our own markers
+                polylineOptions: {
+                    strokeColor: '#4f46e5', // Indigo color
+                    strokeWeight: 5,
+                    strokeOpacity: 0.8,
+                }
+            });
+            directionsRenderer.setMap(activeTripMap);
+            
+            directionsService.route({
+                origin: originPlace.geometry.location,
+                destination: destinationPlace.geometry.location,
+                travelMode: google.maps.TravelMode.DRIVING // Assume driving for now
+            }, (response, status) => {
+                if (status === 'OK') {
+                    directionsRenderer.setDirections(response);
+                } else {
+                    console.error('Directions request failed due to ' + status);
+                }
+            });
+        }
+
+        // NEW: Function to start live location tracking
+        function startLocationTracking() {
+            if (!navigator.geolocation) {
+                showMessage('error', 'Geolocation Not Supported', 'Your browser does not support location tracking.');
+                return;
+            }
+
+            // Ask for permission and get current location once to start
+            navigator.geolocation.getCurrentPosition(position => {
+                const pos = {
+                    lat: position.coords.latitude,
+                    lng: position.coords.longitude,
+                };
+                
+                // Create a custom marker for the user's current location
+                const userIcon = {
+                    path: google.maps.SymbolPath.CIRCLE,
+                    scale: 8,
+                    fillColor: '#1d4ed8', // Blue
+                    fillOpacity: 1,
+                    strokeColor: 'white',
+                    strokeWeight: 2,
+                };
+
+                currentUserMarker = new google.maps.Marker({
+                    position: pos,
+                    map: activeTripMap,
+                    icon: userIcon,
+                    title: 'Your Location'
+                });
+
+                activeTripMap.setCenter(pos);
+
+                // Then, start watching for changes in position
+                watchId = navigator.geolocation.watchPosition(
+                    (newPosition) => {
+                        const newPos = {
+                            lat: newPosition.coords.latitude,
+                            lng: newPosition.coords.longitude,
+                        };
+                        // Move the marker smoothly
+                        currentUserMarker.setPosition(newPos);
+                        activeTripMap.panTo(newPos); // Gently move map center
+                    },
+                    (error) => {
+                        console.error("Error watching position:", error);
+                    },
+                    { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+                );
+
+            }, () => {
+                showMessage('info', 'Location Access Denied', 'Please enable location access to use live tracking.');
+            });
+        }
+
+        // NEW: Function to stop tracking
+        function stopLocationTracking() {
+            if (navigator.geolocation && watchId !== null) {
+                navigator.geolocation.clearWatch(watchId);
+                watchId = null;
+            }
+        }
+
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const state = { currentPage: 'page-login', jwtToken: null, planId: null, itineraries: [], selectedItinerary: null, bookingDetails: null, paymentDetails: null, safetySession: null, heartbeatIntervalId: null, apiBaseUrl: 'http://localhost:8080' };
+            const pages = { login: document.getElementById('page-login'), plan: document.getElementById('page-plan'), options: document.getElementById('page-options'), booking: document.getElementById('page-booking'), activeTrip: document.getElementById('page-active-trip') };
+            const loginForm = document.getElementById('login-form'); const planForm = document.getElementById('plan-form'); const itineraryList = document.getElementById('itinerary-list'); const googleLoginBtn = document.getElementById('google-login-btn');
+            const showPage = (pageId) => { Object.values(pages).forEach(page => page.classList.add('hidden')); if (pages[pageId]) pages[pageId].classList.remove('hidden'); state.currentPage = pageId; };
+            const showMessage = (type, title, message) => { const icons = { success: `<svg class="w-12 h-12 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`, error: `<svg class="w-12 h-12 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`, info: `<svg class="w-12 h-12 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>` }; document.getElementById('modal-icon').innerHTML = icons[type]; document.getElementById('modal-title').textContent = title; document.getElementById('modal-message').textContent = message; document.getElementById('message-modal').classList.remove('hidden'); };
+            const apiCall = async (endpoint, method = 'GET', body = null) => {
+                const headers = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${state.jwtToken}` };
+                const options = { method, headers };
+                if (body) options.body = JSON.stringify(body);
+                const response = await fetch(`${state.apiBaseUrl}${endpoint}`, options);
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({ error: 'An unknown error occurred' }));
+                    throw new Error(errorData.error || `Server responded with ${response.status}`);
+                }
+                return response.status === 204 ? null : response.json();
+            };
+            const handleLogin = async (e) => { e.preventDefault(); const email = document.getElementById('login-email').value; const password = document.getElementById('login-password').value; const button = e.target.querySelector('button[type="submit"]'); button.disabled = true; button.textContent = 'Logging in...'; try { const data = await apiCall('/v1/auth/login', 'POST', { email, password }); state.jwtToken = data.token; showPage('plan'); } catch (error) { showMessage('error', 'Login Failed', error.message); } finally { button.disabled = false; button.textContent = 'Login'; } };
+            const handleGoogleLogin = () => { window.location.href = `${state.apiBaseUrl}/auth/google/login`; };
+            const handlePlanTrip = async (e) => { e.preventDefault(); if (!originPlace || !destinationPlace) { showMessage('error', 'Missing Information', 'Please select both points.'); return; } const findButton = e.target.querySelector('button[type="submit"]'); findButton.disabled = true; findButton.textContent = 'Finding...'; try { const data = await apiCall('/v1/trips/plan', 'POST', { origin: originPlace.formatted_address, destination: destinationPlace.formatted_address }); state.planId = data.plan_id; state.itineraries = data.options; renderItineraryOptions(data.options); showPage('options'); } catch (error) { showMessage('error', 'Planning Failed', error.message); } finally { findButton.disabled = false; findButton.textContent = 'Find Routes'; } };
+            const renderItineraryOptions = (options) => { itineraryList.innerHTML = options.map(opt => `<div class="border border-slate-200 p-4 rounded-lg hover:border-indigo-500 hover:bg-indigo-50/50 transition-all cursor-pointer" data-itinerary-id="${opt.itinerary_id}"><div class="flex justify-between items-center"><div class="flex items-center space-x-3"><div class="flex -space-x-2">${opt.mode_mix.split('+').map(mode => getModeIcon(mode)).join('')}</div><span class="font-semibold">${opt.mode_mix.replace(/\+/g, ' + ')}</span></div><div class="text-right"><p class="font-bold text-lg">${(opt.rough_cost_cents / 100).toFixed(2)} THB</p><p class="text-sm text-slate-500">${opt.total_minutes} min</p></div></div></div>`).join(''); document.querySelectorAll('#itinerary-list > div').forEach(card => card.addEventListener('click', (e) => handleSelectItinerary(e.currentTarget.dataset.itineraryId))); };
+            const handleSelectItinerary = async (id) => { const itineraryId = parseInt(id, 10); try { await apiCall(`/v1/trips/plans/${state.planId}/select`, 'POST', { itinerary_id: itineraryId }); state.selectedItinerary = state.itineraries.find(opt => opt.itinerary_id === itineraryId); renderBookingSummary(); showPage('booking'); } catch (error) { showMessage('error', 'Selection Failed', error.message); } };
+            const handleConfirmPayment = async () => {
+                const button = document.getElementById('confirm-payment-btn');
+                button.disabled = true; button.textContent = 'Processing...';
+                try {
+                    const bookingData = await apiCall('/v1/bookings', 'POST', { plan_id: state.planId });
+                    state.bookingDetails = bookingData;
+                    const paymentData = await apiCall('/v1/payments/authorize', 'POST', { booking_id: bookingData.booking_id, amount_cents: state.selectedItinerary.rough_cost_cents });
+                    state.paymentDetails = paymentData;
+                    document.getElementById('active-trip-summary').textContent = `${originPlace.name} to ${destinationPlace.name}`;
+                    showMessage('success', 'Payment Authorized', `Your ride is confirmed! Fare: ${(bookingData.fare_cents / 100).toFixed(2)} THB`);
+                    document.getElementById('modal-close-btn').onclick = () => { document.getElementById('message-modal').classList.add('hidden'); startTrip(); };
+                } catch (error) { showMessage('error', 'Booking Failed', error.message); } finally { button.disabled = false; button.textContent = 'Confirm & Authorize Payment'; }
+            };
+            const startTrip = async () => {
+                try {
+                    const safetyData = await apiCall('/v1/safety/session', 'POST', { plan_id: state.planId, interval_min: 15 });
+                    state.safetySession = safetyData;
+                    document.getElementById('eta-display').innerHTML = `<p class="font-semibold text-green-700">Driver is arriving in ${state.bookingDetails.eta_minutes} minutes.</p>`;
+                    showPage('activeTrip');
+                    // NEW: Initialize the map after the page is visible
+                    setTimeout(initActiveTripMap, 100);
+                } catch(error) { showMessage('error', 'Failed to Start Safety Session', error.message); }
+            };
+            const handleHeartbeatAck = async () => { try { await apiCall('/v1/safety/heartbeat/ack', 'POST', { session_id: state.safetySession.session_id }); showMessage('success', 'Checked In!', 'Your safety has been confirmed.'); startHeartbeatTimer(); } catch (error) { showMessage('error', 'Check-in Failed', error.message); } };
+            const handleSOS = async () => { try { await apiCall('/v1/safety/sos', 'POST', { plan_id: state.planId }); showMessage('error', 'SOS Activated!', 'Emergency contacts have been notified.'); } catch (error) { showMessage('error', 'SOS Failed', error.message); }};
+            const handleCompleteTrip = () => { 
+                stopLocationTracking(); // NEW: Stop tracking when trip ends
+                clearInterval(state.heartbeatIntervalId); 
+                showMessage('success', 'Trip Completed!', 'Thank you for using NavMate.'); 
+                document.getElementById('modal-close-btn').onclick = () => { document.getElementById('message-modal').classList.add('hidden'); resetStateAndGoHome(); }; 
+            };
+            const resetStateAndGoHome = () => { state.planId = null; state.selectedItinerary = null; state.bookingDetails = null; state.paymentDetails = null; state.safetySession = null; originPlace = null; destinationPlace = null; document.getElementById('origin').value = ''; document.getElementById('destination').value = ''; if(state.heartbeatIntervalId) clearInterval(state.heartbeatIntervalId); state.heartbeatIntervalId = null; showPage('plan'); initMap(); };
+            const handleLogout = () => { stopLocationTracking(); Object.keys(state).forEach(k => state[k] = null); originPlace = null; destinationPlace = null; showPage('login'); };
+            const getModeIcon = (mode) => { const icons = { WALK: `<div class="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center border-2 border-white"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>`, TRANSIT: `<div class="w-8 h-8 rounded-full bg-green-100 text-green-600 flex items-center justify-center border-2 border-white"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 21h4"/><path d="M12 11v10"/><path d="M4 11h16"/><path d="M5 11V6a3 3 0 0 1 3-3h8a3 3 0 0 1 3 3v5"/><path d="M6 11h12"/><path d="M19 11v-3.5"/><path d="M5 11v-3.5"/></svg></div>`, RIDE: `<div class="w-8 h-8 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center border-2 border-white"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C20.7 10.1 20 9.2 20 8v-1c0-1.1-.9-2-2-2h-1"/><path d="M12 5H7c-1.1 0-2 .9-2 2v9h12v-4.1"/><path d="m16 8 2 2-2 2"/><path d="M9 17a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/><path d="M4 17a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/></svg></div>` }; return icons[mode] || ''; };
+            const renderBookingSummary = () => { const itinerary = state.selectedItinerary; document.getElementById('booking-summary').innerHTML = `<div class="flex justify-between items-center"><p class="text-slate-600">Route</p><p class="font-semibold">${itinerary.mode_mix.replace(/\+/g, ' + ')}</p></div><div class="flex justify-between items-center"><p class="text-slate-600">Estimated Time</p><p class="font-semibold">${itinerary.total_minutes} min</p></div><div class="border-t border-slate-200 my-2"></div><div class="flex justify-between items-center"><p class="text-slate-600 font-bold">Estimated Fare</p><p class="font-bold text-xl text-indigo-600">${(itinerary.rough_cost_cents / 100).toFixed(2)} THB</p></div>`; };
+            const startHeartbeatTimer = () => { if(state.heartbeatIntervalId) clearInterval(state.heartbeatIntervalId); let duration = state.safetySession.interval_minutes * 60; state.heartbeatIntervalId = setInterval(() => { const minutes = Math.floor(duration / 60), seconds = duration % 60; document.getElementById('heartbeat-timer').textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`; if (--duration < 0) { clearInterval(state.heartbeatIntervalId); document.getElementById('heartbeat-timer').textContent = "00:00"; document.getElementById('heartbeat-timer').classList.add('text-red-500', 'pulse'); } else { document.getElementById('heartbeat-timer').classList.remove('text-red-500', 'pulse'); } }, 1000); };
+            
+            planForm.addEventListener('submit', handlePlanTrip); loginForm.addEventListener('submit', handleLogin); googleLoginBtn.addEventListener('click', handleGoogleLogin);
+            document.getElementById('confirm-payment-btn').addEventListener('click', handleConfirmPayment); document.getElementById('heartbeat-ack-btn').addEventListener('click', handleHeartbeatAck); document.getElementById('sos-btn').addEventListener('click', handleSOS); document.getElementById('complete-trip-btn').addEventListener('click', handleCompleteTrip); document.getElementById('logout-btn').addEventListener('click', handleLogout); document.getElementById('back-to-plan-btn').addEventListener('click', () => showPage('plan')); document.getElementById('back-to-options-btn').addEventListener('click', () => showPage('options')); document.getElementById('message-modal').addEventListener('click', () => document.getElementById('message-modal').classList.add('hidden'));
+            const signupFormEl = document.getElementById('signup-form'); const showLoginBtn = document.getElementById('show-login-btn'); const showSignupBtn = document.getElementById('show-signup-btn'); showLoginBtn.addEventListener('click', () => { showLoginBtn.classList.add('bg-white', 'shadow', 'text-indigo-600'); showSignupBtn.classList.remove('bg-white', 'shadow', 'text-indigo-600'); loginForm.classList.remove('hidden'); signupFormEl.classList.add('hidden'); }); showSignupBtn.addEventListener('click', () => { showSignupBtn.classList.add('bg-white', 'shadow', 'text-indigo-600'); showLoginBtn.classList.remove('bg-white', 'shadow', 'text-indigo-600'); signupFormEl.classList.remove('hidden'); loginForm.classList.add('hidden'); });
+            const urlParams = new URLSearchParams(window.location.search); const token = urlParams.get('token'); if (token) { state.jwtToken = token; showPage('plan'); window.history.replaceState({}, document.title, "/"); }
+        });
+    </script>
+</body>
+</html>
+

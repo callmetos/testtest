@@ -1,19 +1,37 @@
 package travel
 
 import (
+	"log"
 	"net/http"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 
+	"navmate-backend/config" // Import config to get API Key
 	"navmate-backend/internal/adapters/maps"
 	"navmate-backend/internal/models"
 )
 
-type Handler struct{ db *gorm.DB }
+type Handler struct {
+	db          *gorm.DB
+	mapsAdapter *maps.GoogleMapsAdapter // NEW: Use the new adapter
+}
 
-func New(db *gorm.DB) *Handler { return &Handler{db: db} }
+// New handler now needs the app config to get the API Key
+func New(db *gorm.DB, cfg *config.Config) *Handler {
+	// NEW: Initialize the Google Maps Adapter using the key from config
+	adapter, err := maps.NewGoogleMapsAdapter(cfg.Google.GoogleMapsAPIKey)
+	if err != nil {
+		// Log a fatal error if the adapter can't be created, as it's critical.
+		log.Fatalf("Failed to create maps adapter: %v", err)
+	}
+
+	return &Handler{
+		db:          db,
+		mapsAdapter: adapter,
+	}
+}
 
 type planReq struct {
 	Origin      string  `json:"origin" binding:"required"`
@@ -36,15 +54,15 @@ func (h *Handler) Plan(c *gin.Context) {
 		}
 	}
 
-	// generate options
-	opts := maps.EstimateItineraries(req.Origin, req.Destination, tptr)
+	// NEW: generate options using the real adapter
+	opts := h.mapsAdapter.EstimateItineraries(req.Origin, req.Destination, tptr)
 
 	plan := models.TripPlan{UserID: uid, Origin: req.Origin, Destination: req.Destination, DepartAt: tptr}
 	if err := h.db.Create(&plan).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "create plan failed"})
 		return
 	}
-	// save itineraries + legs
+
 	type optResp struct {
 		ItineraryID    uint   `json:"itinerary_id"`
 		ModeMix        string `json:"mode_mix"`
@@ -112,13 +130,13 @@ func (h *Handler) SelectItinerary(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	// verify owner
+
 	var p models.TripPlan
 	if err := h.db.Where("id = ? AND user_id = ?", id, uid).First(&p).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "plan not found"})
 		return
 	}
-	// verify itinerary belongs to plan
+
 	var cnt int64
 	if err := h.db.Model(&models.Itinerary{}).
 		Where("id = ? AND plan_id = ?", req.ItineraryID, p.ID).

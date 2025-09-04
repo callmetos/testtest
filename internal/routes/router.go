@@ -51,7 +51,8 @@ func SetupRouter(router *gin.Engine, DB *gorm.DB, cfg *config.Config) {
 		})
 
 		// Trip planning routes (BE-5)
-		travH := travel.New(DB)
+		// NEW: Pass the config to the travel handler
+		travH := travel.New(DB, cfg)
 		v1.POST("/trips/plan", middleware.AuthJWT(jwtSvc), travH.Plan)
 		v1.GET("/trips/plans/:id", middleware.AuthJWT(jwtSvc), travH.GetPlan)
 		v1.POST("/trips/plans/:id/select", middleware.AuthJWT(jwtSvc), travH.SelectItinerary)
