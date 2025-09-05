@@ -20,6 +20,8 @@ import (
 func SetupRouter(router *gin.Engine, DB *gorm.DB, cfg *config.Config) {
 	router.Use(gin.Recovery())
 
+	//router.StaticFile("/", "./index.html")
+
 	// Health checks
 	router.GET("/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"status": "ok", "timestamp": time.Now().UTC().Format(time.RFC3339)})

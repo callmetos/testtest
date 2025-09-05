@@ -133,12 +133,7 @@ func (h *GoogleHandler) Callback(c *gin.Context) {
 		return
 	}
 
-	// ส่งกลับเป็น JSON (ถ้าอยาก redirect ไป FE พร้อม token ก็ทำได้)
-	c.JSON(http.StatusOK, gin.H{
-		"token":    token,
-		"email":    u.Email,
-		"provider": u.Provider,
-	})
+	c.Redirect(http.StatusFound, "/?token="+token)
 }
 
 type googleUser struct {
