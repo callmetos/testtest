@@ -4,7 +4,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/golang-jwt/jwt/v5" // ✅ สำคัญ ต้องมี
+	"github.com/golang-jwt/jwt/v5"
 )
 
 type Service struct {
