@@ -79,14 +79,13 @@ func (h *Handler) Get(c *gin.Context) {
 	uid := uint(c.GetInt("user_id"))
 	id := c.Param("id")
 	var b models.RideBooking
-	if err := h.db.First(&b, id).Error; err != nil {
+
+	// Verify ownership and fetch booking in a single query
+	err := h.db.Joins("JOIN trip_plans ON trip_plans.id = ride_bookings.plan_id").
+		Where("ride_bookings.id = ? AND trip_plans.user_id = ?", id, uid).
+		First(&b).Error
+	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "not found"})
-		return
-	}
-	// verify plan belongs to user
-	var p models.TripPlan
-	if err := h.db.First(&p, b.PlanID).Error; err != nil || p.UserID != uid {
-		c.JSON(http.StatusForbidden, gin.H{"error": "forbidden"})
 		return
 	}
 	c.JSON(http.StatusOK, b)
