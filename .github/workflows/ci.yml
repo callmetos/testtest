@@ -26,8 +26,21 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.22' # ระบุเวอร์ชัน Go ให้ตรงกับโปรเจกต์
+          go-version: '1.23' # ระบุเวอร์ชัน Go ให้ตรงกับโปรเจกต์
 
-      # 3. รันคำสั่ง go test เพื่อทดสอบโค้ดทั้งหมด
+      # 3. ติดตั้ง golangci-lint
+      - name: Install golangci-lint
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.55.2
+
+      # 4. รัน linter
+      - name: Run linter
+        run: golangci-lint run ./...
+
+      # 5. รันคำสั่ง go test เพื่อทดสอบโค้ดทั้งหมด
       - name: Run Go tests
         run: go test -v ./...
+
+      # 6. Build โปรเจค
+      - name: Build project
+        run: go build -v ./cmd/main.go

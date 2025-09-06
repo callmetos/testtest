@@ -1,10 +1,9 @@
 # ---- Build Stage ----
-FROM golang:1.23-bookworm AS build
+FROM golang:1.23-alpine AS build
 WORKDIR /app
 
 # ติดตั้ง git และ ca-certificates ที่จำเป็นสำหรับการดึง Go modules
-RUN apt-get update && apt-get install -y --no-install-recommends git ca-certificates \
-    && rm -rf /var/lib/apt/lists/*
+RUN apk add --no-cache git ca-certificates
 
 # Copy ไฟล์ go.mod และ go.sum เข้ามาก่อน เพื่อใช้ประโยชน์จาก Docker layer caching
 COPY go.mod go.sum ./

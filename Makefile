@@ -24,22 +24,25 @@ docker-down:
 # Database migrations
 migrate-up:
 	@echo "Running migrations..."
-	@for f in migrations/*.up.sql; do \
+	@if [ ! -f .env ]; then echo "Error: .env file not found. Please copy .env.example to .env and configure it."; exit 1; fi
+	@. .env && for f in migrations/*.up.sql; do \
 		echo "Applying $$f..."; \
-		docker exec -i $$(docker compose ps -q postgres) psql -U postgres -d navmate < "$$f"; \
+		docker exec -i $$(docker compose ps -q postgres) psql -U $$DB_USER -d $$DB_NAME < "$$f"; \
 	done
 
 migrate-down:
 	@echo "Rolling back migrations..."
-	@for f in migrations/*.down.sql; do \
+	@if [ ! -f .env ]; then echo "Error: .env file not found. Please copy .env.example to .env and configure it."; exit 1; fi
+	@. .env && for f in migrations/*.down.sql; do \
 		echo "Rolling back $$f..."; \
-		docker exec -i $$(docker compose ps -q postgres) psql -U postgres -d navmate < "$$f"; \
+		docker exec -i $$(docker compose ps -q postgres) psql -U $$DB_USER -d $$DB_NAME < "$$f"; \
 	done
 
 # Seed database
 seed:
 	@echo "Seeding database..."
-	docker exec -i $$(docker compose ps -q postgres) psql -U postgres -d navmate < scripts/seed.sql
+	@if [ ! -f .env ]; then echo "Error: .env file not found. Please copy .env.example to .env and configure it."; exit 1; fi
+	@. .env && docker exec -i $$(docker compose ps -q postgres) psql -U $$DB_USER -d $$DB_NAME < scripts/seed.sql
 
 # Build
 build:
