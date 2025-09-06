@@ -2,10 +2,6 @@ run:
   timeout: 5m
   go: "1.23"
 
-linters-settings:
-  goanalysis_metalinter:
-    enabled: false  # ปิด linter ที่มีปัญหา
-
 linters:
   enable:
     - gofmt
@@ -17,8 +13,6 @@ linters:
     - gosimple
     - ineffassign
     - typecheck
-  disable:
-    - goanalysis_metalinter  # ปิด linter ที่มีปัญหา
 
 issues:
   exclude-rules:
