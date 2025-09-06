@@ -31,11 +31,11 @@ jobs:
       # 3. ติดตั้ง golangci-lint
       - name: Install golangci-lint
         run: |
-          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.55.2
+          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.61.0
 
       # 4. รัน linter
       - name: Run linter
-        run: golangci-lint run ./...
+        run: golangci-lint run --timeout=5m ./...
 
       # 5. รันคำสั่ง go test เพื่อทดสอบโค้ดทั้งหมด
       - name: Run Go tests
